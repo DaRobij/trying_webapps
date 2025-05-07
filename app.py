@@ -1,42 +1,49 @@
-from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO, emit
+
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from django.urls import path
+from django.conf import settings
+from django.apps import AppConfig
+from django.conf.urls.static import static
+from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+import requests
 import os
+import django
 
-app = Flask(__name__, static_url_path='/static', static_folder='static')  # Setează corect fișierele statice
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'chat.settings')
+django.setup()
 
-# Păstrează istoricul conversațiilor
-chat_history = []
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
 
-# Încarcă istoricul din fișier (dacă există)
-HISTORY_FILE = 'chat_history.json'
-if os.path.exists(HISTORY_FILE):
-    with open(HISTORY_FILE, 'r') as f:
-        chat_history = json.load(f)
+    async def disconnect(self, close_code):
+        pass
 
-@app.route('/')
-def index():
-    return render_template('index.html', chat_history=chat_history)
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        
+        try:
+            # Call Ollama API
+            response = requests.post('http://0.0.0.0:11434/api/generate', 
+                json={'model': 'llama2', 'prompt': message})
+            bot_response = response.json()['response']
+        except Exception as e:
+            bot_response = f"Error: {str(e)}"
 
-@socketio.on('send_message')
-def handle_message(data):
-    # Simulează răspunsul Llama (aici poți integra cu API-ul Llama)
-    user_message = data['message']
-    bot_response = f"Răspuns Llama la: {user_message}"
-    
-    # Adaugă mesajele la istoric
-    chat_history.append({'user': user_message, 'bot': bot_response})
-    
-    # Salvează istoricul în fișier
-    with open(HISTORY_FILE, 'w') as f:
-        json.dump(chat_history, f)
-    
-    # Trimite răspunsul înapoi la client
-    emit('receive_message', {'user': user_message, 'bot': bot_response}, broadcast=True)
+        await self.send(text_data=json.dumps({
+            'user': message,
+            'bot': bot_response
+        }))
 
-if __name__ == '__main__':
-    import eventlet
-    import eventlet.wsgi
-    socketio.run(app, host='0.0.0.0', port=5000)
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter([
+            path("ws/chat/", ChatConsumer.as_asgi()),
+        ])
+    ),
+})

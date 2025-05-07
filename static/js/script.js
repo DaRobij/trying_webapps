@@ -1,25 +1,26 @@
+
 document.addEventListener('DOMContentLoaded', function() {
-    const socket = io();
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/chat/');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
     
-    // Ascultă pentru mesaje noi
-    socket.on('receive_message', function(data) {
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
         appendMessage(data.user, data.bot);
-    });
+    };
     
-    // Trimite mesaj
     messageForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const message = messageInput.value.trim();
         if (message) {
-            socket.emit('send_message', { message: message });
+            socket.send(JSON.stringify({
+                'message': message
+            }));
             messageInput.value = '';
         }
     });
     
-    // Adaugă mesaj în chat
     function appendMessage(userMessage, botResponse) {
         const messageElement = document.createElement('div');
         messageElement.className = 'flex flex-col';
