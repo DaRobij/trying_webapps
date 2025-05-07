@@ -30,7 +30,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'chat.urls'
-ASGI_APPLICATION = 'app.application'
+ASGI_APPLICATION = 'chat.asgi.application'
 
 TEMPLATES = [
     {
