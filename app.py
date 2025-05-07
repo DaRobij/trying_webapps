@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit
 import json
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static', static_folder='static')  # Setează corect fișierele statice
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
@@ -37,4 +37,6 @@ def handle_message(data):
     emit('receive_message', {'user': user_message, 'bot': bot_response}, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    import eventlet
+    import eventlet.wsgi
+    socketio.run(app, host='0.0.0.0', port=5000)
