@@ -18,4 +18,12 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "export DJANGO_SETTINGS_MODULE=chat.settings"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python manage.py migrate"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "python -m django runserver 0.0.0.0:5000"
