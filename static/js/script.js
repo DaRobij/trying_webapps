@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/chat/');
+    const socket = new WebSocket('wss://' + window.location.host + '/ws/chat/');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
