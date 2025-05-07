@@ -15,12 +15,22 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'chat.settings')
 django.setup()
 
+from chat.models import Chat
+from channels.db import database_sync_to_async
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
 
     async def disconnect(self, close_code):
         pass
+
+    @database_sync_to_async
+    def save_chat(self, user_message, bot_response):
+        Chat.objects.create(
+            user_message=user_message,
+            bot_response=bot_response
+        )
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -33,6 +43,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             bot_response = response.json()['response']
         except Exception as e:
             bot_response = f"Error: {str(e)}"
+
+        # Save to database
+        await self.save_chat(message, bot_response)
 
         await self.send(text_data=json.dumps({
             'user': message,
