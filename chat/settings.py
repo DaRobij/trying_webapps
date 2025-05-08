@@ -1,12 +1,14 @@
-
 import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-your-secret-key-here'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+
+DEBUG = True  # Pune False în producție!
+
+ALLOWED_HOSTS = ['*']  # Poți restrânge la ['ciobdev.tech'] după test
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_TRUSTED_ORIGINS = ['https://ciobdev.tech']
 
@@ -57,7 +59,14 @@ DATABASES = {
     }
 }
 
-STATIC_URL = 'static/'
+# Static files settings (Fix pentru Cloudflare Tunnel + Gunicorn)
+STATIC_URL = '/static/'
+
+# Aici se vor aduna toate fișierele după collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Doar pentru dev, dacă ai și fișiere locale
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
